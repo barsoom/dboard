@@ -15,7 +15,7 @@ describe "Dashboard" do
 
   def app
     Sinatra::Application
-  end  
+  end
 
   def start_app
     app.port = 20843
@@ -36,7 +36,7 @@ describe "Dashboard" do
     @new_relic.stub!(:fetch).and_return({ :db => "33.3%", :memory => "33333 MB" })
     Dboard::CACHE.delete "dashboard::source::new_relic"
   end
-  
+
   it "should collect stats and post them to the server" do
     start_app
     body = Dboard::Api::Client.get("/sources?types=new_relic")
