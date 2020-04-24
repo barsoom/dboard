@@ -15,6 +15,10 @@ module Dboard
       Collector.instance.register_after_update_callback(callback)
     end
 
+    def self.register_error_callback(callback)
+      Collector.instance.register_error_callback(callback)
+    end
+
     def self.start
       instance.start
     end
@@ -22,36 +26,20 @@ module Dboard
     def initialize
       @sources = {}
       @after_update_callback = lambda {}
+      @error_callback = lambda { |exception| }
     end
 
     def start
       @sources.each do |source, instance|
         Thread.new do
+          wait_a_little_bit_to_not_start_all_fetches_at_once
+
           loop do
-            time = Time.now
-            puts "#{source} updating..."
-            update_source(source, instance)
-            elapsed_time = Time.now - time
-            time_until_next_update = instance.update_interval - elapsed_time
-            time_until_next_update = 0 if time_until_next_update < 0
-            puts "#{source} done in #{elapsed_time} seconds, will update again in #{time_until_next_update} seconds (interval: #{instance.update_interval})."
-            sleep time_until_next_update
+            update_in_thread(source, instance)
           end
         end
       end
       loop { sleep 1 }
-    end
-
-    def update_source(source, instance)
-      begin
-        data = instance.fetch
-        publish_data(source, data)
-      ensure
-        @after_update_callback.call
-      end
-    rescue Exception => ex
-      puts "Failed to update #{source}: #{ex.message}"
-      puts ex.backtrace
     end
 
     def register_source(key, instance)
@@ -62,8 +50,46 @@ module Dboard
       @after_update_callback = callback
     end
 
+    def register_error_callback(callback)
+      @error_callback = callback
+    end
+
+    # Public because the old tests depend on it
+    def update_source(source, instance)
+      begin
+        data = instance.fetch
+        publish_data(source, data)
+      ensure
+        @after_update_callback.call
+      end
+    rescue Exception => ex
+      puts "Failed to update #{source}: #{ex.message}"
+      puts ex.backtrace
+      @error_callback.call(ex)
+    end
+
+    private
+
+    def update_in_thread(source, instance)
+      time = Time.now
+      puts "#{source} updating..."
+      update_source(source, instance)
+      elapsed_time = Time.now - time
+      time_until_next_update = instance.update_interval - elapsed_time
+      time_until_next_update = 0 if time_until_next_update < 0
+      puts "#{source} done in #{elapsed_time} seconds, will update again in #{time_until_next_update} seconds (interval: #{instance.update_interval})."
+      sleep time_until_next_update
+    rescue Exception => ex
+      puts "Something failed outside the update_source method. #{ex.message}"
+      puts ex.backtrace
+    end
+
     def publish_data(source, data)
       Publisher.publish(source, data)
+    end
+
+    def wait_a_little_bit_to_not_start_all_fetches_at_once
+      sleep 10 * rand
     end
   end
 end
