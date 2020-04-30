@@ -23,5 +23,5 @@ Gem::Specification.new do |s|
   s.add_dependency "json"
   s.add_dependency "dalli"
   s.add_dependency "sinatra"
-  s.add_development_dependency "rspec", "~> 2.99"
+  s.add_development_dependency "rspec", "~> 3.9"
 end
