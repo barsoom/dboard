@@ -11,7 +11,8 @@ post "/sources/:type" do
   Dboard::Api.update(params)
 end
 
-describe "Dashboard" do
+# This test needs setup which we do not have.
+describe "Dashboard", :skip do
 
   def app
     Sinatra::Application
@@ -37,7 +38,7 @@ describe "Dashboard" do
     Dboard::CACHE.delete "dashboard::source::new_relic"
   end
 
-  xit "should collect stats and post them to the server" do
+  it "should collect stats and post them to the server" do
     start_app
     body = Dboard::Api::Client.get("/sources?types=new_relic")
     expect(JSON.parse(body)["sources"]["new_relic"]["data"]).to eq({})
