@@ -37,7 +37,7 @@ describe "Dashboard" do
     Dboard::CACHE.delete "dashboard::source::new_relic"
   end
 
-  it "should collect stats and post them to the server" do
+  xit "should collect stats and post them to the server" do
     start_app
     body = Dboard::Api::Client.get("/sources?types=new_relic")
     expect(JSON.parse(body)["sources"]["new_relic"]["data"]).to eq({})
