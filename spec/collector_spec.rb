@@ -35,6 +35,7 @@ describe Dboard::Collector, "register_source" do
 
     expect(callback).to receive(:call).with(error)
     allow(Dboard::Publisher).to receive(:publish)
+    allow_any_instance_of(Dboard::Collector).to receive(:puts)
     Dboard::Collector.instance.update_source(:new_relic, new_relic)
 
     # since it is a singleton, and this callbacks leaks into the other tests
