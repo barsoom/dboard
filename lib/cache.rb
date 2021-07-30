@@ -1,4 +1,4 @@
-require 'dalli'
+require "dalli"
 
 module Dboard
   if Config.config[:memcache]

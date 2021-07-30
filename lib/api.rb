@@ -1,8 +1,8 @@
-require File.expand_path(File.join(File.dirname(__FILE__), 'cache'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'collector.rb'))
-require 'digest/md5'
-require 'json'
-require 'httparty'
+require File.expand_path(File.join(File.dirname(__FILE__), "cache"))
+require File.expand_path(File.join(File.dirname(__FILE__), "collector.rb"))
+require "digest/md5"
+require "json"
+require "httparty"
 
 module Dboard
   class Api
@@ -15,7 +15,7 @@ module Dboard
 
     def self.get(params)
       types = {}
-      params[:types].split(',').each do |type|
+      params[:types].split(",").each do |type|
         raw_data = CACHE.get("dashboard::source::#{type}")
         data = raw_data ? JSON.parse(raw_data) : {}
         types.merge!(type => { :data => data, :checksum => Digest::MD5.hexdigest(data.inspect) })
