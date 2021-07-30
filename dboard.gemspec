@@ -6,8 +6,8 @@ Gem::Specification.new do |s|
   s.name        = "dboard"
   s.version     = Dboard::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Joakim Kolsjö"]
-  s.email       = ["joakim.kolsjo@gmail.com"]
+  s.authors     = [ "Joakim Kolsjö" ]
+  s.email       = [ "joakim.kolsjo@gmail.com" ]
   s.homepage    = ""
   s.summary     = %q{Dashboard framework}
   s.description = %q{Dashboard framework}
@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
 
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {spec}/*`.split("\n")
-  s.require_paths = ["lib"]
+  s.require_paths = [ "lib" ]
 
   s.add_dependency "httparty"
   s.add_dependency "rake"
