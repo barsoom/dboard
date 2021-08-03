@@ -9,12 +9,12 @@ describe Dboard::Collector, "register_source" do
     new_relic = double
     allow(new_relic).to receive(:update_interval).and_return(5)
     Dboard::Collector.register_source :new_relic, new_relic
-    expect(Dboard::Collector.instance.sources).to eq({ :new_relic => new_relic })
+    expect(Dboard::Collector.instance.sources).to eq({ new_relic: new_relic })
   end
 
   it "can register an after update callback" do
     new_relic = double
-    allow(new_relic).to receive(:fetch).and_return({ :db => "100%" })
+    allow(new_relic).to receive(:fetch).and_return({ db: "100%" })
     callback = double
     Dboard::Collector.register_after_update_callback callback
 
@@ -50,8 +50,8 @@ describe Dboard::Collector, "update_source" do
 
   it "should collect and publish data from sources" do
     new_relic = double
-    allow(new_relic).to receive(:fetch).and_return({ :db => "100%" })
-    expect(Dboard::Publisher).to receive(:publish).with(:new_relic, { :db => "100%" })
+    allow(new_relic).to receive(:fetch).and_return({ db: "100%" })
+    expect(Dboard::Publisher).to receive(:publish).with(:new_relic, { db: "100%" })
     Dboard::Collector.instance.update_source(:new_relic, new_relic)
   end
 

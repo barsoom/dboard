@@ -18,9 +18,9 @@ module Dboard
       params[:types].split(",").each do |type|
         raw_data = CACHE.get("dashboard::source::#{type}")
         data = raw_data ? JSON.parse(raw_data) : {}
-        types.merge!(type => { :data => data, :checksum => Digest::MD5.hexdigest(data.inspect) })
+        types.merge!(type => { data: data, checksum: Digest::MD5.hexdigest(data.inspect) })
       end
-      { :version => (@@version || ENV["COMMIT_HASH"] || "unversioned"), :sources => types }.to_json
+      { version: (@@version || ENV["COMMIT_HASH"] || "unversioned"), sources: types }.to_json
     end
 
     def self.version=(version)

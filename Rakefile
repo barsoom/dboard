@@ -7,4 +7,4 @@ desc "Run specs"
 RSpec::Core::RakeTask.new do |t|
 end
 
-task :default => :spec
+task default: :spec
