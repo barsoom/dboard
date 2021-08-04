@@ -1,3 +1,5 @@
+[![Ruby CI](https://github.com/barsoom/dboard/actions/workflows/ci.yml/badge.svg)](https://github.com/barsoom/dboard/actions/workflows/ci.yml)
+
 A dashboard framework.
 
 It handles collecting data from user defined sources (simple ruby classes) and provides a simple API to poll for updates. See the [example app](https://github.com/joakimk/dboard_example) for information on how to use it.
