@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.summary     = %q{Dashboard framework}
   s.description = %q{Dashboard framework}
   s.license     = "MIT"
+  s.metadata    = { "rubygems_mfa_required" => "true" }
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = [ "lib" ]
