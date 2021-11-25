@@ -17,10 +17,9 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files`.split("\n")
   s.require_paths = [ "lib" ]
 
-  s.add_dependency "httparty"
-  s.add_dependency "rake"
-  s.add_dependency "json"
   s.add_dependency "dalli"
+  s.add_dependency "httparty"
+  s.add_dependency "json"
+  s.add_dependency "rake"
   s.add_dependency "sinatra"
-  s.add_development_dependency "rspec", "~> 3.9"
 end

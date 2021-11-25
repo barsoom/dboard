@@ -3,5 +3,6 @@ gemspec
 
 group :development, :test do
   gem "barsoom_utils"
+  gem "rspec"
   gem "rubocop"
 end
