@@ -6,7 +6,26 @@ describe "Publisher", ".publish" do
     Dboard::Publisher.publish(:new_relic, { db: "80%" })
   end
 
-  it "handles and log socket errors" do
+  it "retries network errors" do
+    stub_request(:post, "http://api.example/sources/new_relic").
+      to_timeout.times(2).
+      to_return({ body: "OK!" })
+
+    Dboard::Publisher.publish(:new_relic, {})
+  end
+
+  it "raises network errors if we run out of retries" do
+    stub_request(:post, "http://api.example/sources/new_relic").
+      to_timeout.times(3).
+      to_return({ body: "OK!" })
+
+    expect {
+      Dboard::Publisher.publish(:new_relic, {})
+    }.to raise_error(Net::OpenTimeout)
+  end
+
+  # 2021-12-07: No idea why we've treated this one specially, but keeping it for now.
+  it "logs socket errors if we run out of retries" do
     expect(Dboard::Api::Client).to receive(:post).and_raise(SocketError.new("failed to connect"))
     expect(Dboard::Publisher).to receive(:puts).with("SocketError: failed to connect")
     Dboard::Publisher.publish(:new_relic, {})
