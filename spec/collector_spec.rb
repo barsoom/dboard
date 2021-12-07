@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), "spec_helper"))
 
-describe Dboard::Collector, "register_source" do
+describe Dboard::Collector, ".register_source" do
   before do
     Dboard::Collector.instance.sources.clear
   end
@@ -48,14 +48,14 @@ describe Dboard::Collector, "update_source" do
     Dboard::Collector.instance.sources.clear
   end
 
-  it "should collect and publish data from sources" do
+  it "collects and publishes data from sources" do
     new_relic = double
     allow(new_relic).to receive(:fetch).and_return({ db: "100%" })
     expect(Dboard::Publisher).to receive(:publish).with(:new_relic, { db: "100%" })
     Dboard::Collector.instance.update_source(:new_relic, new_relic)
   end
 
-  it "should print out debugging info" do
+  it "prints out debugging info" do
     new_relic = double
     allow(new_relic).to receive(:fetch).and_raise(Exception.new("some error"))
     expect(Dboard::Collector.instance).to receive(:puts).twice
