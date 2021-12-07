@@ -13,7 +13,7 @@ module Dboard
     class Client
       include HTTParty
 
-      def self.post(...)
+      def self.post(*args, **kwargs)
         with_retries { super }
       end
 
