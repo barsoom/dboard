@@ -17,6 +17,7 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files`.split("\n")
   s.require_paths = [ "lib" ]
 
+  s.add_dependency "net_http_timeout_errors"
   s.add_dependency "dalli"
   s.add_dependency "httparty"
   s.add_dependency "json"
