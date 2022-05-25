@@ -1,5 +1,5 @@
 require "rspec"
-require 'webmock/rspec'
+require "webmock/rspec"
 
 ENV["RACK_ENV"] ||= "test"
 ENV["API_URL"] = "http://api.example"
