@@ -7,17 +7,17 @@ describe "Publisher", ".publish" do
   end
 
   it "retries network errors" do
-    stub_request(:post, "http://api.example/sources/new_relic").
-      to_timeout.times(2).
-      to_return({ body: "OK!" })
+    stub_request(:post, "http://api.example/sources/new_relic")
+      .to_timeout.times(2)
+      .to_return({ body: "OK!" })
 
     Dboard::Publisher.publish(:new_relic, {})
   end
 
   it "raises network errors if we run out of retries" do
-    stub_request(:post, "http://api.example/sources/new_relic").
-      to_timeout.times(3).
-      to_return({ body: "OK!" })
+    stub_request(:post, "http://api.example/sources/new_relic")
+      .to_timeout.times(3)
+      .to_return({ body: "OK!" })
 
     expect {
       Dboard::Publisher.publish(:new_relic, {})
