@@ -5,17 +5,17 @@ describe Dboard::Collector, ".register_source" do
     Dboard::Collector.instance.sources.clear
   end
 
+  let(:new_relic) { double(:new_relic) }
+  let(:callback) { double(:callback) }
+
   it "can register a source" do
-    new_relic = double
     allow(new_relic).to receive(:update_interval).and_return(5)
     Dboard::Collector.register_source :new_relic, new_relic
     expect(Dboard::Collector.instance.sources).to eq({ new_relic: new_relic })
   end
 
   it "can register an after update callback" do
-    new_relic = double
     allow(new_relic).to receive(:fetch).and_return({ db: "100%" })
-    callback = double
     Dboard::Collector.register_after_update_callback callback
 
     expect(callback).to receive(:call)
@@ -27,10 +27,9 @@ describe Dboard::Collector, ".register_source" do
   end
 
   it "can register an error callback" do
-    new_relic = double
     error = RuntimeError.new("error")
     allow(new_relic).to receive(:fetch).and_raise(error)
-    callback = double
+
     Dboard::Collector.register_error_callback callback
 
     expect(callback).to receive(:call).with(error)
@@ -48,15 +47,15 @@ describe Dboard::Collector, "update_source" do
     Dboard::Collector.instance.sources.clear
   end
 
+  let(:new_relic) { double(:new_relic) }
+
   it "collects and publishes data from sources" do
-    new_relic = double
     allow(new_relic).to receive(:fetch).and_return({ db: "100%" })
     expect(Dboard::Publisher).to receive(:publish).with(:new_relic, { db: "100%" })
     Dboard::Collector.instance.update_source(:new_relic, new_relic)
   end
 
   it "prints out debugging info" do
-    new_relic = double
     allow(new_relic).to receive(:fetch).and_raise(Exception.new("some error"))
     expect(Dboard::Collector.instance).to receive(:puts).twice
     Dboard::Collector.instance.update_source(:new_relic, new_relic)
