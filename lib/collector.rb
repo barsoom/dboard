@@ -7,16 +7,16 @@ module Dboard
 
     attr_reader :sources
 
-    def self.register_source(key, instance)
-      Collector.instance.register_source(key, instance)
+    def self.register_source(key, source_instance)
+      instance.register_source(key, source_instance)
     end
 
     def self.register_after_update_callback(callback)
-      Collector.instance.register_after_update_callback(callback)
+      instance.register_after_update_callback(callback)
     end
 
     def self.register_error_callback(callback)
-      Collector.instance.register_error_callback(callback)
+      instance.register_error_callback(callback)
     end
 
     def self.start
