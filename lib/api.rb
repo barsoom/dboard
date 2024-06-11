@@ -20,7 +20,10 @@ module Dboard
           Class.new {
             include HTTParty
             base_uri config.fetch(:base_uri)
-            basic_auth *config.fetch(:basic_auth)
+
+            if config[:basic_auth]
+              basic_auth *config.fetch(:basic_auth)
+            end
           }
         }
       end
