@@ -11,10 +11,26 @@ module Dboard
     @@version = nil
 
     class Client
-      include HTTParty
+      class << self
+        attr_accessor :clients
+      end
 
-      def self.post(*, **)
-        with_retries { super }
+      def self.endpoints=(endpoints)
+        self.clients = endpoints.map { |config|
+          Class.new {
+            include HTTParty
+            base_uri config.fetch(:base_uri)
+            basic_auth *config.fetch(:basic_auth)
+          }
+        }
+      end
+
+      def self.post(url, opts)
+        with_retries {
+          self.clients.each do |client|
+            client.post(url, opts)
+          end
+        }
       end
 
       private
