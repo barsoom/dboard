@@ -21,6 +21,14 @@ Things dboard do for you:
 * Provides a javascript client that knows how to talk to the API (for now it's only included in the [example app](https://github.com/joakimk/dboard_example))
 * Only calls your javascript widgets when there is new data.
 
+Refreshing sources:
+
+Each source defines `update_interval` (seconds), and the collector polls it on that cadence.
+
+You can also trigger an out-of-band refresh (e.g. from an inbound webhook) with `Dboard::Collector.request_update(:key)`, where `:key` is the key the source was registered under. This is throttled: the first trigger refreshes immediately, and further triggers inside the floor window are coalesced into a single trailing refresh, so a flood of triggers never causes more than one refresh per floor. The poll and manual triggers share one clock, so a manual refresh lets the next poll cycle skip its fetch.
+
+The floor defaults to 30 seconds. A source may override it by defining `min_update_interval` (seconds). The effective floor is capped at the source's `update_interval`, so it can never exceed the poll interval.
+
 Data flow:
 
     +-----------------+              +--------------------+
