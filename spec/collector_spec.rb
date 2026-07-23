@@ -286,6 +286,157 @@ RSpec.describe Dboard::Collector do
       end
     end
 
+    describe "with arguments" do
+      it "passes the argument to fetch as a one-element batch and publishes the result" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: "x" })
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        collector.request_update(:src, "x")
+
+        expect(source).to have_received(:fetch).with([ "x" ])
+        expect(Dboard::Publisher).to have_received(:publish).with(:src, { ok: "x" })
+      end
+
+      it "forwards the argument through the class-level request_update" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        Dboard::Collector.request_update(:src, "x")
+
+        expect(source).to have_received(:fetch).with([ "x" ])
+      end
+
+      it "splits a burst of arguments into a leading batch and a trailing batch" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        workers = capture_worker_blocks
+
+        collector.request_update(:src, "x")
+        collector.request_update(:src, "y")
+        collector.request_update(:src, "z")
+        workers.each(&:call)
+
+        expect(source).to have_received(:fetch).with([ "x" ]).once
+        expect(source).to have_received(:fetch).with([ "y", "z" ]).once
+      end
+
+      it "refreshes the whole source when no argument is given" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        collector.request_update(:src)
+
+        expect(source).to have_received(:fetch).with(no_args)
+      end
+
+      it "does a full refresh when a no-arg request is coalesced with pending arguments" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        workers = capture_worker_blocks
+
+        collector.request_update(:src, "a")
+        collector.request_update(:src, "b")
+        collector.request_update(:src)
+        workers.each(&:call)
+
+        expect(source).to have_received(:fetch).with([ "a" ]).once
+        expect(source).to have_received(:fetch).with(no_args).once
+      end
+
+      it "treats a caller-supplied :full argument as an ordinary partial arg" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        collector.request_update(:src, :full)
+
+        expect(source).to have_received(:fetch).with([ :full ])
+      end
+
+      it "refreshes a source whose fetch takes no arguments" do
+        source = Class.new do
+          def update_interval
+            100
+          end
+
+          def fetch
+            { ok: true }
+          end
+        end.new
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        collector.request_update(:src)
+
+        expect(Dboard::Publisher).to have_received(:publish).with(:src, { ok: true })
+      end
+
+      it "leaves pending args untouched when a poll wins and delivers them on the next on-demand refresh" do
+        source = double(:source, update_interval: 100)
+        fetch_args = []
+        allow(source).to receive(:fetch) { |*args| fetch_args << args.first; { ok: true } }
+        collector.register_source(:src, source)
+        use_fake_clock
+        workers = capture_worker_blocks
+
+        collector.request_update(:src, "a")
+        collector.request_update(:src, "p")
+        expect(collector.instance_variable_get(:@pending)[:src]).to eq([ "p" ])
+
+        collector.send(:update_in_thread, :src, source)
+        expect(collector.instance_variable_get(:@pending)[:src]).to eq([ "p" ])
+
+        workers.each(&:call)
+
+        expect(fetch_args).to eq([ nil, [ "a" ], [ "p" ] ])
+      end
+
+      it "retries the retained leading snapshot when a poll refreshes before it runs" do
+        source = double(:source, update_interval: 100)
+        fetch_args = []
+        allow(source).to receive(:fetch) { |*args| fetch_args << args.first; { ok: true } }
+        collector.register_source(:src, source)
+        clock = use_fake_clock
+        workers = capture_worker_blocks
+
+        collector.request_update(:src, "p")
+        collector.instance_variable_get(:@last_update_at)[:src] = clock.now
+        workers.each(&:call)
+
+        expect(fetch_args).to eq([ [ "p" ] ])
+      end
+
+      it "shares one clock between a partial refresh and the poll" do
+        source = double(:source, update_interval: 100)
+        allow(source).to receive(:fetch).and_return({ ok: true })
+        collector.register_source(:src, source)
+        use_fake_clock
+        run_workers_inline
+
+        collector.request_update(:src, "p")
+        collector.send(:update_in_thread, :src, source)
+
+        expect(source).to have_received(:fetch).with([ "p" ]).once
+        expect(source).to have_received(:fetch).with(no_args).exactly(0).times
+      end
+    end
+
     describe "under real threads" do
       it "coalesces a burst arriving during the leading fetch into one trailing that captures the final state" do
         source = LatchSource.new(update_interval: 0.15)

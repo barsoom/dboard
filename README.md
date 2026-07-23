@@ -29,6 +29,14 @@ You can also trigger an out-of-band refresh (e.g. from an inbound webhook) with 
 
 The floor defaults to 30 seconds. A source may override it by defining `min_update_interval` (seconds). The effective floor is capped at the source's `update_interval`, so it can never exceed the poll interval.
 
+Targeted refreshes:
+
+`request_update` also takes an optional argument for a targeted refresh: `Dboard::Collector.request_update(:key, arg)`. The argument is opaque; the framework forwards it verbatim to the source and never inspects it. Omitting it (or passing `nil`) means a full refresh of the whole source.
+
+A source opts in by defining `fetch(args = nil)`. It receives `nil` for a full refresh (a scheduled poll or a no-arg `request_update`) and an array of the accumulated arguments for a targeted refresh. Arguments are batched the same way triggers are coalesced: the leading refresh carries the first argument, and any arguments that arrive during the active window are delivered together in the one trailing refresh. A no-arg (full) request queued during a burst wins over pending arguments, since a full refresh already covers them. The poll shares the same clock and floor as targeted refreshes, so both together still fetch at most once per floor.
+
+Publishing stays wholesale: the collector always replaces the stored blob for the key. A source doing a targeted refresh must therefore read its current state (e.g. from the cache) and return the full merged blob, not only the refreshed part.
+
 Data flow:
 
     +-----------------+              +--------------------+
