@@ -119,7 +119,7 @@ module Dboard
     end
 
     def describe_batch(batch)
-      full_batch?(batch) ? "full" : "targeted: #{batch.join(", ")}"
+      full_batch?(batch) ? nil : "(#{batch.join(", ")})"
     end
 
     def decide_request(active, last_update_at, floor, now)
@@ -189,7 +189,7 @@ module Dboard
 
         started = monotonic_now
         update_source(source, instance, batch)
-        puts "#{source} refreshed (#{describe_batch(batch)}) in #{(monotonic_now - started).round(1)}s"
+        puts [ "#{source} refreshed", describe_batch(batch), "in #{(monotonic_now - started).round(1)}s" ].compact.join(" ")
         true
       }
     end
