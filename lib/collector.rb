@@ -50,7 +50,8 @@ module Dboard
           wait_a_little_bit_to_not_start_all_fetches_at_once
 
           loop do
-            update_in_thread(source, instance)
+            request_update(source)
+            sleep instance.update_interval
           end
         end
       end
@@ -110,11 +111,15 @@ module Dboard
     private
 
     def fetch_source(instance, batch)
-      if batch.nil? || batch.any? { |entry| entry.equal?(FULL) }
-        instance.fetch
-      else
-        instance.fetch(batch)
-      end
+      full_batch?(batch) ? instance.fetch : instance.fetch(batch)
+    end
+
+    def full_batch?(batch)
+      batch.nil? || batch.any? { |entry| entry.equal?(FULL) }
+    end
+
+    def describe_batch(batch)
+      full_batch?(batch) ? "full" : "targeted: #{batch.join(", ")}"
     end
 
     def decide_request(active, last_update_at, floor, now)
@@ -182,23 +187,11 @@ module Dboard
         }
         return false if batch.equal?(SKIP)
 
+        started = monotonic_now
         update_source(source, instance, batch)
+        puts "#{source} refreshed (#{describe_batch(batch)}) in #{(monotonic_now - started).round(1)}s"
         true
       }
-    end
-
-    def update_in_thread(source, instance)
-      puts "#{source} polling..."
-      fired = perform_refresh(source, instance, instance.update_interval)
-      time_until_next_update = @mutex.synchronize {
-        remaining = instance.update_interval - (monotonic_now - @last_update_at[source])
-        remaining < 0 ? 0 : remaining
-      }
-      puts "#{source} #{fired ? "updated" : "still fresh"}, will poll again in #{time_until_next_update} seconds (interval: #{instance.update_interval})."
-      sleep time_until_next_update
-    rescue Exception => ex
-      puts "Something failed outside the update_source method. #{ex.message}"
-      puts ex.backtrace
     end
 
     def min_interval_for(instance)

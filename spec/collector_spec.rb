@@ -245,19 +245,6 @@ RSpec.describe Dboard::Collector do
     end
 
     describe "the shared clock" do
-      it "lets a manual refresh make the next poll cycle skip its fetch" do
-        source = double(:source, update_interval: 100)
-        allow(source).to receive(:fetch).and_return({ ok: true })
-        collector.register_source(:src, source)
-        use_fake_clock
-        run_workers_inline
-
-        collector.request_update(:src)
-        collector.send(:update_in_thread, :src, source)
-
-        expect(source).to have_received(:fetch).once
-      end
-
       it "re-evaluates a scheduled trailing when a poll refreshes during its sleep" do
         source = double(:source, update_interval: 100, min_update_interval: 10)
         clock = FakeClock.new
@@ -387,26 +374,6 @@ RSpec.describe Dboard::Collector do
         expect(Dboard::Publisher).to have_received(:publish).with(:src, { ok: true })
       end
 
-      it "leaves pending args untouched when a poll wins and delivers them on the next on-demand refresh" do
-        source = double(:source, update_interval: 100)
-        fetch_args = []
-        allow(source).to receive(:fetch) { |*args| fetch_args << args.first; { ok: true } }
-        collector.register_source(:src, source)
-        use_fake_clock
-        workers = capture_worker_blocks
-
-        collector.request_update(:src, "a")
-        collector.request_update(:src, "p")
-        expect(collector.instance_variable_get(:@pending)[:src]).to eq([ "p" ])
-
-        collector.send(:update_in_thread, :src, source)
-        expect(collector.instance_variable_get(:@pending)[:src]).to eq([ "p" ])
-
-        workers.each(&:call)
-
-        expect(fetch_args).to eq([ nil, [ "a" ], [ "p" ] ])
-      end
-
       it "retries the retained leading snapshot when a poll refreshes before it runs" do
         source = double(:source, update_interval: 100)
         fetch_args = []
@@ -420,20 +387,6 @@ RSpec.describe Dboard::Collector do
         workers.each(&:call)
 
         expect(fetch_args).to eq([ [ "p" ] ])
-      end
-
-      it "shares one clock between a partial refresh and the poll" do
-        source = double(:source, update_interval: 100)
-        allow(source).to receive(:fetch).and_return({ ok: true })
-        collector.register_source(:src, source)
-        use_fake_clock
-        run_workers_inline
-
-        collector.request_update(:src, "p")
-        collector.send(:update_in_thread, :src, source)
-
-        expect(source).to have_received(:fetch).with([ "p" ]).once
-        expect(source).to have_received(:fetch).with(no_args).exactly(0).times
       end
     end
 

@@ -23,19 +23,13 @@ Things dboard do for you:
 
 Refreshing sources:
 
-Each source defines `update_interval` (seconds), and the collector polls it on that cadence.
+Each source defines `update_interval` (seconds); the collector polls it on that cadence and pushes the result to the dashboard.
 
-You can also trigger an out-of-band refresh (e.g. from an inbound webhook) with `Dboard::Collector.request_update(:key)`, where `:key` is the key the source was registered under. This is throttled: the first trigger refreshes immediately, and further triggers inside the floor window are coalesced into a single trailing refresh, so a flood of triggers never causes more than one refresh per floor. The poll and manual triggers share one clock, so a manual refresh lets the next poll cycle skip its fetch.
+To refresh a source between scheduled polls (e.g. from an inbound webhook), call `Dboard::Collector.request_update(:key)`, where `:key` is the key the source was registered under. On-demand refreshes are throttled: the first fires immediately and rapid repeats collapse into at most one refresh per floor. The floor defaults to 30 seconds; a source can lower it with `min_update_interval` (seconds), capped at its `update_interval`.
 
-The floor defaults to 30 seconds. A source may override it by defining `min_update_interval` (seconds). The effective floor is capped at the source's `update_interval`, so it can never exceed the poll interval.
+For a targeted refresh, pass an argument: `Dboard::Collector.request_update(:key, arg)`. A source receives it by defining `fetch(args = nil)`: `args` is `nil` for a full refresh and an array of the requested arguments for a targeted one, so the source can refresh only what changed (e.g. the single project named in a webhook).
 
-Targeted refreshes:
-
-`request_update` also takes an optional argument for a targeted refresh: `Dboard::Collector.request_update(:key, arg)`. The argument is opaque; the framework forwards it verbatim to the source and never inspects it. Omitting it (or passing `nil`) means a full refresh of the whole source.
-
-A source opts in by defining `fetch(args = nil)`. It receives `nil` for a full refresh (a scheduled poll or a no-arg `request_update`) and an array of the accumulated arguments for a targeted refresh. Arguments are batched the same way triggers are coalesced: the leading refresh carries the first argument, and any arguments that arrive during the active window are delivered together in the one trailing refresh. A no-arg (full) request queued during a burst wins over pending arguments, since a full refresh already covers them. The poll shares the same clock and floor as targeted refreshes, so both together still fetch at most once per floor.
-
-Publishing stays wholesale: the collector always replaces the stored blob for the key. A source doing a targeted refresh must therefore read its current state (e.g. from the cache) and return the full merged blob, not only the refreshed part.
+Publishing is wholesale: the collector always replaces the stored blob for a key, so a targeted refresh must return the full merged blob (reading current state from the cache if needed), not only the part it refreshed.
 
 Data flow:
 
