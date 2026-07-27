@@ -26,8 +26,11 @@ describe "Publisher", ".publish" do
 
   # 2021-12-07: No idea why we've treated this one specially, but keeping it for now.
   it "logs socket errors if we run out of retries" do
-    expect(Dboard::Api::Client).to receive(:post).and_raise(SocketError.new("failed to connect"))
-    expect(Dboard::Publisher).to receive(:puts).with("SocketError: failed to connect")
+    allow(Dboard::Api::Client).to receive(:post).and_raise(SocketError.new("failed to connect"))
+    allow(Dboard.logger).to receive(:error)
+
     Dboard::Publisher.publish(:new_relic, {})
+
+    expect(Dboard.logger).to have_received(:error).with("SocketError: failed to connect")
   end
 end

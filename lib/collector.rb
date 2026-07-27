@@ -1,3 +1,4 @@
+require File.expand_path(File.join(File.dirname(__FILE__), "logging"))
 require File.expand_path(File.join(File.dirname(__FILE__), "publisher"))
 require "singleton"
 
@@ -103,8 +104,8 @@ module Dboard
         @after_update_callback.call
       end
     rescue Exception => ex
-      puts "Failed to update #{source}: #{ex.message}"
-      puts ex.backtrace
+      Dboard.logger.error("Failed to update #{source}: #{ex.message}")
+      Dboard.logger.error(ex.backtrace.join("\n"))
       @error_callback.call(ex)
     end
 
@@ -158,8 +159,8 @@ module Dboard
         break if cleared
       end
     rescue Exception => ex
-      puts "Something failed in the update worker for #{key}: #{ex.message}"
-      puts ex.backtrace
+      Dboard.logger.error("Something failed in the update worker for #{key}: #{ex.message}")
+      Dboard.logger.error(ex.backtrace.join("\n"))
     ensure
       @mutex.synchronize { @active[key] = false } unless cleared
     end
@@ -189,7 +190,7 @@ module Dboard
 
         started = monotonic_now
         update_source(source, instance, batch)
-        puts [ "#{source} refreshed", describe_batch(batch), "in #{(monotonic_now - started).round(1)}s" ].compact.join(" ")
+        Dboard.logger.info([ "#{source} refreshed", describe_batch(batch), "in #{(monotonic_now - started).round(1)}s" ].compact.join(" "))
         true
       }
     end

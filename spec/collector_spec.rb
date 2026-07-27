@@ -105,7 +105,6 @@ RSpec.describe Dboard::Collector do
       allow(new_relic).to receive(:fetch).and_raise(error)
       allow(callback).to receive(:call)
       allow(Dboard::Publisher).to receive(:publish)
-      allow_any_instance_of(Dboard::Collector).to receive(:puts)
       Dboard::Collector.register_error_callback callback
 
       Dboard::Collector.instance.update_source(:new_relic, new_relic)
@@ -133,13 +132,13 @@ RSpec.describe Dboard::Collector do
       expect(Dboard::Publisher).to have_received(:publish).with(:new_relic, { db: "100%" })
     end
 
-    it "prints out debugging info" do
+    it "logs debugging info" do
       allow(new_relic).to receive(:fetch).and_raise(Exception.new("some error"))
-      allow(Dboard::Collector.instance).to receive(:puts)
+      allow(Dboard.logger).to receive(:error)
 
       Dboard::Collector.instance.update_source(:new_relic, new_relic)
 
-      expect(Dboard::Collector.instance).to have_received(:puts).twice
+      expect(Dboard.logger).to have_received(:error).twice
     end
   end
 
@@ -148,7 +147,6 @@ RSpec.describe Dboard::Collector do
 
     before do
       reset_collector!
-      allow(collector).to receive(:puts)
       allow(Dboard::Publisher).to receive(:publish)
     end
 
