@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require File.expand_path(File.join(File.dirname(__FILE__), "cache"))
 require File.expand_path(File.join(File.dirname(__FILE__), "collector.rb"))
 require "digest/md5"
